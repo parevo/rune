@@ -24,7 +24,6 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import runeLogo from '../assets/images/logo-universal.png';
 import {
     Select,
     SelectContent,
@@ -88,8 +87,8 @@ export function ConnectionModal({ title, initialConfig, initialName, onSave, onC
             <DialogContent className="sm:max-w-[480px] bg-card border-border/40 shadow-2xl p-0 overflow-hidden animate-in zoom-in-95 duration-200">
                 <DialogHeader className="p-6 pb-2 bg-muted/20">
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-inner border border-primary/20 overflow-hidden p-1.5">
-                            <img src={runeLogo} alt="RuneDB" className="w-full h-full object-contain" />
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-inner border border-primary/20">
+                            <Database size={20} />
                         </div>
                         <div>
                             <DialogTitle className="text-lg font-black tracking-tight uppercase italic">

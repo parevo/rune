@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Download, Rocket, X } from 'lucide-react';
 import { ApplyUpdate, RestartApp } from "../../wailsjs/go/main/App";
-import runeLogo from '../assets/images/logo-universal.png';
 
 interface UpdateInfo {
     currentVersion: string;
@@ -55,8 +54,8 @@ export function UpdateModal({ updateInfo, onClose }: Props) {
             <DialogContent className="sm:max-w-[420px] bg-card border-border/40 shadow-2xl p-0 overflow-hidden animate-in zoom-in-95 duration-200">
                 <DialogHeader className="p-6 pb-2 bg-primary/5 border-b border-primary/10">
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-inner border border-primary/20 overflow-hidden p-1.5">
-                            <img src={runeLogo} alt="RuneDB" className="w-full h-full object-contain" />
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-inner border border-primary/20">
+                            <Sparkles size={20} />
                         </div>
                         <div>
                             <DialogTitle className="text-lg font-black tracking-tight uppercase italic flex items-center gap-2">

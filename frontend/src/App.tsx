@@ -30,7 +30,6 @@ import {
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import runeLogo from './assets/images/logo-universal.png';
 
 function App() {
     const {
@@ -163,8 +162,8 @@ function App() {
             <header className="h-12 border-b bg-card/50 backdrop-blur-xl flex items-center justify-between px-4 shrink-0 shadow-lg z-30">
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setViewMode('hub')}>
-                        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shadow-xl shadow-primary/20 transition-all group-hover:rotate-12 group-active:scale-90 border border-primary/20 overflow-hidden p-1.5">
-                            <img src={runeLogo} alt="RuneDB" className="w-full h-full object-contain" />
+                        <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-xl shadow-primary/20 transition-all group-hover:rotate-12 group-active:scale-90">
+                            <Database size={18} strokeWidth={2.5} />
                         </div>
                         <h1 className="text-base font-black tracking-tighter uppercase italic bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                             RuneDB
