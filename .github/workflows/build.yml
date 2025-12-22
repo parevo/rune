@@ -72,6 +72,16 @@ jobs:
             zip -r ../../${{ matrix.name }} rune.app
           fi
 
+      - name: Generate Checksum
+        shell: bash
+        run: |
+          # Calculate checksum for the artifact
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+            certutil -hashfile ${{ matrix.name }} SHA256 | grep -v "hash" | head -n 1 > ${{ matrix.name }}.sha256
+          else
+            shasum -a 256 ${{ matrix.name }} > ${{ matrix.name }}.sha256
+          fi
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
