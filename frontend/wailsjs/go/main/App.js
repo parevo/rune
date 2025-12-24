@@ -46,6 +46,10 @@ export function ExecuteStatement(arg1) {
   return window['go']['main']['App']['ExecuteStatement'](arg1);
 }
 
+export function ExportTable(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['ExportTable'](arg1, arg2, arg3, arg4);
+}
+
 export function GetAppVersion() {
   return window['go']['main']['App']['GetAppVersion']();
 }
@@ -100,6 +104,10 @@ export function RestartApp() {
 
 export function SaveConnection(arg1, arg2) {
   return window['go']['main']['App']['SaveConnection'](arg1, arg2);
+}
+
+export function SelectExportPath(arg1) {
+  return window['go']['main']['App']['SelectExportPath'](arg1);
 }
 
 export function TestConnection(arg1) {

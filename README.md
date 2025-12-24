@@ -50,6 +50,10 @@ Powered by a **Go** backend and the **Wails** framework, RuneDB consumes a fract
 - **Spreadsheet-like Editing**: Double-click to edit cells, add rows, or delete data.
 - **Safe Mode**: Changes are staged before committing, preventing accidental data loss.
 
+### 📥 **Universal Data Export**
+- **Flexibility**: Export entire datasets to Excel (`.xlsx`), CSV, or JSON formats in one click.
+- **Native Experience**: Uses native system dialogs for saving files, integrating seamlessly with your OS.
+
 ### 🔄 **Stay Updated**
 - **Auto-Update**: RuneDB automatically checks for updates, ensuring you always have the latest features and security patches.
 

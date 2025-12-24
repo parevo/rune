@@ -24,6 +24,8 @@ export function ExecuteQuery(arg1:string):Promise<database.QueryResult>;
 
 export function ExecuteStatement(arg1:string):Promise<database.ExecuteResult>;
 
+export function ExportTable(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
+
 export function GetAppVersion():Promise<string>;
 
 export function GetColumns(arg1:string,arg2:string):Promise<Array<database.ColumnInfo>>;
@@ -51,6 +53,8 @@ export function RenameConnection(arg1:string,arg2:string):Promise<void>;
 export function RestartApp():Promise<void>;
 
 export function SaveConnection(arg1:string,arg2:database.ConnectionConfig):Promise<void>;
+
+export function SelectExportPath(arg1:string):Promise<string>;
 
 export function TestConnection(arg1:database.ConnectionConfig):Promise<boolean>;
 

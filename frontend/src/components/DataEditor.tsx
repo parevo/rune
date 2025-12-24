@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ColumnInfo, TableDataResponse } from '../types';
-import { GetTableData, InsertRow, UpdateRow, DeleteRow } from '../../wailsjs/go/main/App';
+import { GetTableData, InsertRow, UpdateRow, DeleteRow, SelectExportPath, ExportTable } from '../../wailsjs/go/main/App';
 import {
     Plus,
     Trash2,
@@ -19,7 +19,8 @@ import {
     Copy,
     FileJson,
     FileText,
-    Database
+    Database,
+    Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -269,6 +270,21 @@ export function DataEditor({ database, table, onClose }: Props) {
         toast.success('Copied as JSON');
     };
 
+    const handleExport = async (format: 'xlsx' | 'csv' | 'json') => {
+        try {
+            const path = await SelectExportPath(format);
+            if (!path) return; // Cancelled
+
+            toast.promise(ExportTable(database, table, format, path), {
+                loading: 'Exporting data...',
+                success: 'Data exported successfully',
+                error: (err) => `Export failed: ${err}`
+            });
+        } catch (err: any) {
+            toast.error(`Export failed: ${err.message}`);
+        }
+    };
+
     const copyAsSQLInsert = () => {
         const columns = data?.columns.map(c => c.name) || [];
         const rows = getSelectedRowsData();
@@ -368,6 +384,16 @@ export function DataEditor({ database, table, onClose }: Props) {
                             </DropdownMenuItem>
                             <DropdownMenuItem className="text-[11px] font-medium" onClick={() => setShowModifyModal(true)}>
                                 <Settings2 size={12} className="mr-2" /> Modify Table
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-[11px] font-medium" onClick={() => handleExport('xlsx')}>
+                                <FileText size={12} className="mr-2 text-green-600" /> Export to Excel
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-[11px] font-medium" onClick={() => handleExport('csv')}>
+                                <Download size={12} className="mr-2" /> Export to CSV
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-[11px] font-medium" onClick={() => handleExport('json')}>
+                                <FileJson size={12} className="mr-2" /> Export to JSON
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem

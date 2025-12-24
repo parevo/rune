@@ -225,3 +225,36 @@ func (a *App) ApplyUpdate(latestVersion string) error {
 func (a *App) RestartApp() error {
 	return a.updater.RestartApp()
 }
+
+// ====================
+// Export Methods
+// ====================
+
+// SelectExportPath opens a save dialog for the user to choose where to save the export
+func (a *App) SelectExportPath(format string) (string, error) {
+	var filters []runtime.FileFilter
+	var defaultExt string
+
+	switch format {
+	case "xlsx":
+		filters = []runtime.FileFilter{{DisplayName: "Excel Workbook (*.xlsx)", Pattern: "*.xlsx"}}
+		defaultExt = "*.xlsx"
+	case "csv":
+		filters = []runtime.FileFilter{{DisplayName: "CSV File (*.csv)", Pattern: "*.csv"}}
+		defaultExt = "*.csv"
+	case "json":
+		filters = []runtime.FileFilter{{DisplayName: "JSON File (*.json)", Pattern: "*.json"}}
+		defaultExt = "*.json"
+	}
+
+	return runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		Title:           "Export Data",
+		DefaultFilename: "export" + defaultExt[1:],
+		Filters:         filters,
+	})
+}
+
+// ExportTable exports the table data to a file
+func (a *App) ExportTable(dbName, tableName, format, outputPath string) error {
+	return a.db.ExportTable(dbName, tableName, format, outputPath)
+}
