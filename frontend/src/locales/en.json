@@ -39,7 +39,7 @@
         "offline": "Offline",
         "offlinePrompt": "Connect to a server to browse schema objects",
         "core": "CORE",
-        "license": "LICENSE: MIT",
+        "license": "LICENSE: GPL-3.0",
         "active": "ACTIVE:"
     },
     "connectionHub": {

@@ -39,7 +39,7 @@
         "offline": "Çevrimdışı",
         "offlinePrompt": "Şema nesnelerini görmek için bir sunucuya bağlanın",
         "core": "ÇEKİRDEK",
-        "license": "LİSANS: MIT",
+        "license": "LİSANS: GPL-3.0",
         "active": "AKTİF:"
     },
     "connectionHub": {

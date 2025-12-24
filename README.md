@@ -153,7 +153,7 @@ We believe in the power of open source. Found a bug? Have a feature request?
 ---
 
 ## 📄 License
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the GNU General Public License v3.0. See `LICENSE` for more information.
 
 ---
 
