@@ -9,6 +9,7 @@ import { ResultsTable } from './components/ResultsTable';
 import { DataEditor } from './components/DataEditor';
 import { ConnectionModal } from './components/ConnectionModal';
 import { CommandPalette, useCommandPalette } from './components/CommandPalette';
+import { ThemeToggle } from './components/ThemeToggle';
 import { ConnectionConfig, UpdateInfo } from './types';
 import { ToggleFullscreen, CheckForUpdate, GetAppVersion } from '../wailsjs/go/main/App';
 import { UpdateModal } from './components/UpdateModal';
@@ -337,6 +338,8 @@ function App() {
                     </div>
 
                     <Separator orientation="vertical" className="h-5 bg-border/40" />
+
+                    <ThemeToggle />
 
                     <button
                         onClick={handleToggleFullscreen}

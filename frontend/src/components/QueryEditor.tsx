@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format as formatSQL } from 'sql-formatter';
+import { useTheme } from '../contexts/ThemeContext';
 
 // Configure Monaco loader
 loader.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.43.0/min/vs' } });
@@ -25,6 +26,7 @@ interface Props {
 }
 
 export function QueryEditor({ value, onChange, onExecute, loading, schema }: Props) {
+    const { resolvedTheme } = useTheme();
     const [monacoInstance, setMonacoInstance] = useState<Monaco | null>(null);
     const [historyOpen, setHistoryOpen] = useState(false);
     const [queryHistory, setQueryHistory] = useState<string[]>(() => {
@@ -297,14 +299,29 @@ export function QueryEditor({ value, onChange, onExecute, loading, schema }: Pro
 
     const handleEditorWillMount = (monaco: Monaco) => {
         setMonacoInstance(monaco);
-        // Custom theme for Monaco to match OpenDB shadcn theme better
-        monaco.editor.defineTheme('opendb-theme', {
+
+        // Dark theme for Monaco
+        monaco.editor.defineTheme('rune-dark', {
             base: 'vs-dark',
             inherit: true,
             rules: [],
             colors: {
-                'editor.background': '#020205', // bg-background approx
+                'editor.background': '#020205',
                 'editor.lineHighlightBackground': '#1e293b20',
+                'editorCursor.foreground': '#3b82f6',
+                'editor.selectionBackground': '#3b82f630',
+                'editorActiveLineNumber.foreground': '#3b82f6',
+            }
+        });
+
+        // Light theme for Monaco
+        monaco.editor.defineTheme('rune-light', {
+            base: 'vs',
+            inherit: true,
+            rules: [],
+            colors: {
+                'editor.background': '#ffffff',
+                'editor.lineHighlightBackground': '#f1f5f920',
                 'editorCursor.foreground': '#3b82f6',
                 'editor.selectionBackground': '#3b82f630',
                 'editorActiveLineNumber.foreground': '#3b82f6',
@@ -423,7 +440,7 @@ export function QueryEditor({ value, onChange, onExecute, loading, schema }: Pro
                 <Editor
                     height="100%"
                     defaultLanguage="sql"
-                    theme="opendb-theme"
+                    theme={resolvedTheme === 'dark' ? 'rune-dark' : 'rune-light'}
                     value={value}
                     onChange={(val) => onChange(val || '')}
                     beforeMount={handleEditorWillMount}
