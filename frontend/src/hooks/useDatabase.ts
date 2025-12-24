@@ -4,7 +4,7 @@ import {
     GetDatabases, GetTables, GetColumns, SaveConnection, LoadConnections,
     DeleteConnection, UseDatabase, RenameConnection, UpdateConnection,
     GetTableData, InsertRow, UpdateRow, DeleteRow, DeleteRows,
-    AlterTable, TruncateTable, DropTable
+    AlterTable, TruncateTable, DropTable, GetDatabaseSchema
 } from '../../wailsjs/go/main/App';
 import {
     ConnectionConfig, SavedConnection, QueryResult, DatabaseInfo,
@@ -18,7 +18,7 @@ export function useDatabase() {
     const [error, setError] = useState<string | null>(null);
     const [databases, setDatabases] = useState<DatabaseInfo[]>([]);
     const [currentDb, setCurrentDb] = useState<string>('');
-    const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
+    // const [queryResult, setQueryResult] = useState<QueryResult | null>(null); // Legacy state removed
     const [savedConnections, setSavedConnections] = useState<SavedConnection[]>([]);
 
     const clearError = useCallback(() => setError(null), []);
@@ -72,7 +72,7 @@ export function useDatabase() {
             setConnected(false);
             setDatabases([]);
             setCurrentDb('');
-            setQueryResult(null);
+            setQueryResults([]);
             toast.info("Disconnected from database.");
         } catch (err: any) {
             toast.error(`Disconnect failed: ${err.message}`);
@@ -109,6 +109,16 @@ export function useDatabase() {
         }
     }, []);
 
+    const getDatabaseSchema = useCallback(async (database: string): Promise<Record<string, string[]> | null> => {
+        try {
+            const schema = await GetDatabaseSchema(database);
+            return schema || null;
+        } catch (err: any) {
+            console.error('Failed to get schema for autocomplete:', err);
+            return null;
+        }
+    }, []);
+
     const useDb = useCallback(async (database: string) => {
         try {
             await UseDatabase(database);
@@ -120,19 +130,48 @@ export function useDatabase() {
         }
     }, []);
 
+    const [queryResults, setQueryResults] = useState<QueryResult[]>([]);
+
+    // Backward compatibility for single result views
+    const queryResult = queryResults.length > 0 ? queryResults[0] : null;
+
     const executeQuery = useCallback(async (query: string) => {
+        return executeQueries([query]);
+    }, []);
+
+    const executeQueries = useCallback(async (queries: string[]) => {
         setLoading(true);
         setError(null);
+        setQueryResults([]);
+
+        const results: QueryResult[] = [];
+
         try {
-            const result = await ExecuteQuery(query);
-            setQueryResult(result);
-            if (result && result.rowCount !== undefined) {
-                toast.success(`Query executed: ${result.rowCount} rows returned`);
+            for (const q of queries) {
+                if (!q.trim()) continue;
+                const res = await ExecuteQuery(q);
+                if (res) {
+                    results.push(res);
+                }
             }
-            return result;
+
+            setQueryResults(results);
+
+            if (results.length > 0) {
+                const totalRows = results.reduce((acc, r) => acc + (r.rowCount || 0), 0);
+                toast.success(`Executed ${results.length} queries (${totalRows} rows).`);
+            }
+
+            return results.length > 0 ? results[0] : null;
         } catch (err: any) {
-            toast.error(`Query execution failed: ${err.message}`);
-            setError(err.message || 'Query failed');
+            // If we have some results, keep them? 
+            // Usually DB tools show the error and maybe previous results.
+            // For now, allow partial results + error override
+            setQueryResults(results);
+
+            const errorMessage = typeof err === 'string' ? err : (err.message || 'Query failed');
+            toast.error(`Execution failed: ${errorMessage}`);
+            setError(errorMessage);
             return null;
         } finally {
             setLoading(false);
@@ -248,6 +287,7 @@ export function useDatabase() {
         databases,
         currentDb,
         queryResult,
+        queryResults,
         savedConnections,
         // Actions
         testConnection,
@@ -256,8 +296,10 @@ export function useDatabase() {
         refreshDatabases,
         getTables,
         getColumns,
+        getDatabaseSchema,
         useDb,
         executeQuery,
+        executeQueries,
         loadSavedConnections,
         saveConnection,
         updateConnection,

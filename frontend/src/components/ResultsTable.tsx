@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { QueryResult } from '../types';
 import {
     AlertCircle,
@@ -22,11 +22,23 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
 interface Props {
-    result: QueryResult | null;
+    results?: QueryResult[];
+    result?: QueryResult | null; // Deprecated
     error: string | null;
 }
 
-export function ResultsTable({ result, error }: Props) {
+export function ResultsTable({ results, result, error }: Props) {
+    // Unify input to array
+    const data = results || (result ? [result] : []);
+    const [activeIndex, setActiveIndex] = useState(0);
+
+    // Reset active index when data changes significantly
+    useEffect(() => {
+        if (data.length > 0 && activeIndex >= data.length) {
+            setActiveIndex(0);
+        }
+    }, [data.length]);
+
     if (error) {
         return (
             <div className="h-full flex items-center justify-center p-6 pb-20">
@@ -43,6 +55,7 @@ export function ResultsTable({ result, error }: Props) {
                             <pre className="text-[12px] font-mono whitespace-pre-wrap text-muted-foreground leading-relaxed bg-black/20 p-4 rounded-lg border border-destructive/10">
                                 {error}
                             </pre>
+                            {/* Show any successful results before the error? For simplicity, we just show error if it failed globally, but typically we might want to see partials. */}
                         </div>
                     </div>
                 </div>
@@ -50,7 +63,7 @@ export function ResultsTable({ result, error }: Props) {
         );
     }
 
-    if (!result) {
+    if (data.length === 0) {
         return (
             <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-4 opacity-40">
                 <div className="w-16 h-16 rounded-full border-2 border-dashed border-muted flex items-center justify-center">
@@ -64,23 +77,41 @@ export function ResultsTable({ result, error }: Props) {
         );
     }
 
+    const activeResult = data[activeIndex];
+
     return (
         <div className="flex flex-col h-full">
             <div className="h-9 border-b flex items-center justify-between px-4 bg-muted/10 shrink-0">
-                <div className="flex items-center gap-4 text-[10px] font-bold uppercase text-muted-foreground tracking-widest">
-                    <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-4 text-[10px] font-bold uppercase text-muted-foreground tracking-widest overflow-hidden">
+                    <div className="flex items-center gap-1.5 shrink-0">
                         <TableIcon size={12} className="text-primary/60" />
-                        QueryResult
+                        Query Results
                     </div>
+
+                    {data.length > 1 && (
+                        <div className="flex items-center gap-1 ml-2">
+                            <Separator orientation="vertical" className="h-3 mr-2" />
+                            {data.map((_, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setActiveIndex(idx)}
+                                    className={cn(
+                                        "px-2 py-0.5 rounded text-[9px] transition-colors border",
+                                        activeIndex === idx
+                                            ? "bg-primary/20 text-primary border-primary/20"
+                                            : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/20"
+                                    )}
+                                >
+                                    Result {idx + 1}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     <Separator orientation="vertical" className="h-3" />
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 shrink-0">
                         <Hash size={12} className="text-muted-foreground/40" />
-                        {result.rowCount} rows
-                    </div>
-                    <Separator orientation="vertical" className="h-3" />
-                    <div className="flex items-center gap-1.5">
-                        <FileJson size={12} className="text-muted-foreground/40" />
-                        JSON Scan
+                        {activeResult?.rowCount} rows
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -94,7 +125,7 @@ export function ResultsTable({ result, error }: Props) {
                         <TableHeader className="bg-card/80 sticky top-0 z-10 shadow-sm backdrop-blur-sm">
                             <TableRow className="hover:bg-transparent border-b">
                                 <TableHead className="w-12 text-center text-[10px] font-black text-muted-foreground/30 border-r py-3 uppercase tracking-tighter">#</TableHead>
-                                {result.columns.map((col, i) => (
+                                {activeResult?.columns.map((col, i) => (
                                     <TableHead key={i} className="text-[11px] font-bold text-foreground/80 py-3 uppercase tracking-wider border-r last:border-r-0">
                                         <div className="flex items-center gap-2">
                                             {col}
@@ -104,7 +135,7 @@ export function ResultsTable({ result, error }: Props) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {result.rows.map((row, rowIndex) => (
+                            {activeResult?.rows.map((row, rowIndex) => (
                                 <TableRow key={rowIndex} className="group hover:bg-primary/5 transition-colors border-b last:border-b-0">
                                     <TableCell className="text-center font-mono text-[10px] text-muted-foreground/40 border-r py-2 bg-muted/5 group-hover:bg-primary/10 transition-colors">
                                         {rowIndex + 1}

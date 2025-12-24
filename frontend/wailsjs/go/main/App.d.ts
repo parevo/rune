@@ -28,6 +28,8 @@ export function GetAppVersion():Promise<string>;
 
 export function GetColumns(arg1:string,arg2:string):Promise<Array<database.ColumnInfo>>;
 
+export function GetDatabaseSchema(arg1:string):Promise<Record<string, Array<string>>>;
+
 export function GetDatabases():Promise<Array<database.DatabaseInfo>>;
 
 export function GetTableData(arg1:database.TableDataRequest):Promise<database.TableDataResponse>;

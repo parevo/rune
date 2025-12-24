@@ -16,6 +16,8 @@ import {
     ResizablePanel,
     ResizablePanelGroup
 } from "@/components/ui/resizable";
+import { TabBar } from './components/TabBar';
+import { Tab } from './types/tabs';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     Database,
@@ -38,7 +40,8 @@ function App() {
         error,
         databases,
         currentDb,
-        queryResult,
+        queryResult, // Legacy
+        queryResults,
         savedConnections,
         testConnection,
         connect,
@@ -47,25 +50,35 @@ function App() {
         getColumns,
         useDb,
         executeQuery,
+        executeQueries,
         loadSavedConnections,
         saveConnection,
         updateConnection,
         renameConnection,
         deleteConnection,
         clearError,
+        getDatabaseSchema,
     } = useDatabase();
 
     const [query, setQuery] = useState(() => {
         return localStorage.getItem('opendb_query') || 'SELECT * FROM ';
     });
-    const [selectedTable, setSelectedTable] = useState<{ db: string; table: string } | null>(() => {
-        const saved = localStorage.getItem('opendb_selected_table');
-        return saved ? JSON.parse(saved) : null;
+
+    // Tab State
+    const [tabs, setTabs] = useState<Tab[]>(() => {
+        const saved = localStorage.getItem('opendb_tabs');
+        return saved ? JSON.parse(saved) : [{ id: 'query-main', type: 'query', title: 'Query Editor' }];
     });
-    const [viewMode, setViewMode] = useState<'query' | 'data' | 'hub'>(() => {
-        const saved = localStorage.getItem('opendb_view_mode');
-        return (saved as 'query' | 'data' | 'hub') || 'hub';
+    const [activeTabId, setActiveTabId] = useState<string>(() => {
+        return localStorage.getItem('opendb_active_tab') || 'query-main';
     });
+    // Schema for autocomplete
+    const [dbSchema, setDbSchema] = useState<Record<string, string[]> | null>(null);
+
+    // Determine view mode based on active tab
+    const activeTab = tabs.find(t => t.id === activeTabId);
+    const viewMode = !connected ? 'hub' : (activeTab?.type === 'query' ? 'query' : (activeTab?.type === 'table' ? 'data' : 'hub'));
+
     const [modalOpen, setModalOpen] = useState(false);
     const [modalData, setModalData] = useState<{ config?: ConnectionConfig; name?: string }>({});
 
@@ -91,6 +104,33 @@ function App() {
         init();
     }, []);
 
+    // Update schema when database changes
+    // Update schema when database changes
+    useEffect(() => {
+        if (!connected) {
+            setDbSchema(null);
+            return;
+        }
+
+        const fetchSchema = async () => {
+            if (!currentDb) {
+                // Connected but no DB selected yet. Autocomplete works but with no table specific suggestions.
+                setDbSchema({});
+                return;
+            }
+
+            try {
+                const schema = await getDatabaseSchema(currentDb);
+                // If schema is null (error), set to empty obj to clear loading state
+                setDbSchema(schema || {});
+            } catch (e) {
+                console.error("Failed to fetch schema on db change:", e);
+                setDbSchema({});
+            }
+        };
+        fetchSchema();
+    }, [connected, currentDb, getDatabaseSchema]);
+
     const handleToggleFullscreen = async () => {
         await ToggleFullscreen();
         setIsFullscreen(!isFullscreen);
@@ -104,34 +144,70 @@ function App() {
         localStorage.setItem('opendb_query', query);
     }, [query]);
 
+    // Persist Tabs
     useEffect(() => {
-        localStorage.setItem('opendb_view_mode', viewMode);
-    }, [viewMode]);
-
-    useEffect(() => {
-        if (selectedTable) {
-            localStorage.setItem('opendb_selected_table', JSON.stringify(selectedTable));
-        } else {
-            localStorage.removeItem('opendb_selected_table');
-        }
-    }, [selectedTable]);
+        localStorage.setItem('opendb_tabs', JSON.stringify(tabs));
+        localStorage.setItem('opendb_active_tab', activeTabId);
+    }, [tabs, activeTabId]);
 
     const handleSelectDatabase = useCallback((database: string) => {
         useDb(database);
     }, [useDb]);
 
     const handleSelectTable = useCallback((database: string, table: string) => {
-        setSelectedTable({ db: database, table });
-        setQuery(`SELECT * FROM \`${database}\`.\`${table}\` LIMIT 100`);
-        setViewMode('data');
-    }, []);
+        const tabId = `table-${database}-${table}`;
+        const existingTab = tabs.find(t => t.id === tabId);
 
-    const handleExecute = useCallback(() => {
-        if (query.trim()) {
-            executeQuery(query);
-            setViewMode('query');
+        if (existingTab) {
+            setActiveTabId(tabId);
+        } else {
+            const newTab: Tab = {
+                id: tabId,
+                type: 'table',
+                title: table,
+                data: { db: database, table }
+            };
+            setTabs(prev => [...prev, newTab]);
+            setActiveTabId(tabId);
         }
-    }, [query, executeQuery]);
+    }, [tabs]);
+
+    const handleTabClose = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const newTabs = tabs.filter(t => t.id !== id);
+        setTabs(newTabs);
+
+        if (activeTabId === id) {
+            // activate the previous tab or the query editor
+            const index = tabs.findIndex(t => t.id === id);
+            const nextTab = newTabs[index - 1] || newTabs[0];
+            if (nextTab) {
+                setActiveTabId(nextTab.id);
+            }
+        }
+    };
+
+
+    const handleExecute = useCallback((sqlOverride?: string) => {
+        const sqlToRun = typeof sqlOverride === 'string' ? sqlOverride : query;
+        if (sqlToRun.trim()) {
+            // Split by semicolon for basic multi-statement support
+            // This is a naive split; it doesn't handle semicolons in quotes, but covers basic usage
+            const statements = sqlToRun.split(';').map(s => s.trim()).filter(s => s.length > 0);
+
+            if (statements.length > 0) {
+                executeQueries(statements);
+            }
+
+            // Ensure we are in query mode/tab
+            if (activeTab?.type !== 'query') {
+                // Find or create query tab
+                const queryTab = tabs.find(t => t.type === 'query');
+                if (queryTab) setActiveTabId(queryTab.id);
+            }
+        }
+    }, [query, executeQueries, tabs, activeTab]);
+
 
     const handleOpenModal = (config?: ConnectionConfig, name?: string) => {
         setModalData({ config, name });
@@ -151,17 +227,54 @@ function App() {
             // Find current name if any
             const sc = savedConnections.find(c => c.config.host === config.host && c.config.database === config.database);
             setActiveConnectionName(sc?.name);
-            setViewMode('query');
+
+            // Fetch schema / Auto-select database
+            if (config.database) {
+                try {
+                    console.log("Fetching schema for:", config.database);
+                    const schema = await getDatabaseSchema(config.database);
+                    console.log("Fetched schema:", schema);
+                    setDbSchema(schema);
+                } catch (e) {
+                    console.error("Failed to fetch schema:", e);
+                }
+            } else {
+                // AUTO-SELECT LOGIC: If no DB specified, try to find a user DB
+                try {
+                    // We need to fetch databases explicitly here because the state update in hook might be pending
+                    const { GetDatabases } = await import('../wailsjs/go/main/App');
+                    const dbs = await GetDatabases();
+                    if (dbs && dbs.length > 0) {
+                        const systemDbs = ['information_schema', 'mysql', 'performance_schema', 'sys'];
+                        const userDbs = dbs.filter(d => !systemDbs.includes(d.name));
+
+                        let targetDb = '';
+                        if (userDbs.length > 0) {
+                            targetDb = userDbs[0].name;
+                        } else {
+                            targetDb = dbs[0].name;
+                        }
+
+                        if (targetDb) {
+                            console.log("Auto-selecting database:", targetDb);
+                            await handleSelectDatabase(targetDb);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Auto-select failed:", e);
+                }
+            }
         }
         return success;
     };
+
 
     return (
         <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden font-sans select-none">
             {/* Header */}
             <header className="h-12 border-b bg-card/50 backdrop-blur-xl flex items-center justify-between px-4 shrink-0 shadow-lg z-30">
                 <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setViewMode('hub')}>
+                    <div className="flex items-center gap-2 group cursor-pointer">
                         <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-xl shadow-primary/20 transition-all group-hover:rotate-12 group-active:scale-90">
                             <Database size={18} strokeWidth={2.5} />
                         </div>
@@ -170,48 +283,14 @@ function App() {
                         </h1>
                     </div>
 
+
                     <Separator orientation="vertical" className="h-5 bg-border/40" />
 
                     {connected && (
                         <div className="flex items-center h-full gap-1">
-                            <button
-                                onClick={() => setViewMode('query')}
-                                className={cn(
-                                    "px-4 h-9 flex items-center gap-2 text-[11px] font-black transition-all rounded-lg uppercase tracking-widest",
-                                    viewMode === 'query'
-                                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                                )}
-                            >
-                                <Code2 size={13} strokeWidth={3} />
-                                EDITOR
-                            </button>
-                            <button
-                                onClick={() => setViewMode('data')}
-                                disabled={!selectedTable}
-                                className={cn(
-                                    "px-4 h-9 flex items-center gap-2 text-[11px] font-black transition-all rounded-lg uppercase tracking-widest disabled:opacity-20",
-                                    viewMode === 'data'
-                                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                                )}
-                            >
-                                <Table2 size={13} strokeWidth={3} />
-                                CONTENT
-                            </button>
-                            <button
-                                onClick={() => setViewMode('hub')}
-                                className={cn(
-                                    "px-4 h-9 flex items-center gap-2 text-[11px] font-black transition-all rounded-lg uppercase tracking-widest",
-                                    viewMode === 'hub'
-                                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                                )}
-                            >
-                                <LayoutDashboard size={13} strokeWidth={3} />
-                                HUB
-                            </button>
+                            {/* Replaced by TabBar in main area */}
                         </div>
+
                     )}
                 </div>
 
@@ -263,49 +342,72 @@ function App() {
                             onDisconnect={disconnect}
                             onOpenModal={handleOpenModal}
                             activeName={activeConnectionName}
-                            onGoToHub={() => setViewMode('hub')}
+                            onGoToHub={() => {
+                                // Maybe add a hub tab or just reset?
+                                // For now, just reset to query
+                                const queryTab = tabs.find(t => t.type === 'query');
+                                if (queryTab) setActiveTabId(queryTab.id);
+                            }}
                         />
+
                     </ResizablePanel>
 
                     <ResizableHandle withHandle className="bg-border/10 w-[1px]" />
 
                     {/* Column 2: Main Workspace (Center) */}
-                    <ResizablePanel defaultSize={64}>
-                        {(!connected || viewMode === 'hub') ? (
-                            <ConnectionHub
-                                savedConnections={savedConnections}
-                                onConnect={handleConnect}
-                                onOpenModal={handleOpenModal}
-                                onDelete={deleteConnection}
-                                loading={loading}
+                    <ResizablePanel defaultSize={64} className="flex flex-col relative">
+                        {connected && (
+                            <TabBar
+                                tabs={tabs}
+                                activeTabId={activeTabId}
+                                onTabSelect={setActiveTabId}
+                                onTabClose={handleTabClose}
                             />
-                        ) : viewMode === 'query' ? (
-                            <ResizablePanelGroup direction="vertical">
-                                <ResizablePanel defaultSize={50} minSize={20}>
-                                    <QueryEditor
-                                        value={query}
-                                        onChange={setQuery}
-                                        onExecute={handleExecute}
-                                        loading={loading}
-                                    />
-                                </ResizablePanel>
-                                <ResizableHandle withHandle className="bg-border/10 h-[1px]" />
-                                <ResizablePanel defaultSize={50} minSize={20}>
-                                    <ResultsTable
-                                        result={queryResult}
-                                        error={error}
-                                    />
-                                </ResizablePanel>
-                            </ResizablePanelGroup>
-                        ) : (
-                            selectedTable && (
-                                <DataEditor
-                                    database={selectedTable.db}
-                                    table={selectedTable.table}
-                                    onClose={() => setViewMode('query')}
-                                />
-                            )
                         )}
+
+                        <div className="flex-1 relative overflow-hidden">
+                            {(!connected) ? (
+                                <ConnectionHub
+                                    savedConnections={savedConnections}
+                                    onConnect={handleConnect}
+                                    onOpenModal={handleOpenModal}
+                                    onDelete={deleteConnection}
+                                    loading={loading}
+                                />
+                            ) : activeTab?.type === 'query' ? (
+                                <ResizablePanelGroup direction="vertical">
+                                    <ResizablePanel defaultSize={50} minSize={20}>
+                                        <QueryEditor
+                                            value={query}
+                                            onChange={setQuery}
+                                            onExecute={handleExecute}
+                                            loading={loading}
+                                            schema={dbSchema}
+                                        />
+                                    </ResizablePanel>
+                                    <ResizableHandle withHandle className="bg-border/10 h-[1px]" />
+                                    <ResizablePanel defaultSize={50} minSize={20}>
+                                        <ResultsTable
+                                            results={queryResults}
+                                            error={error}
+                                        />
+                                    </ResizablePanel>
+                                </ResizablePanelGroup>
+                            ) : activeTab?.type === 'table' && activeTab.data ? (
+                                <DataEditor
+                                    database={activeTab.data.db}
+                                    table={activeTab.data.table}
+                                    onClose={() => {
+                                        // Close this tab
+                                        handleTabClose(activeTab.id, { stopPropagation: () => { } } as any);
+                                    }}
+                                />
+                            ) : (
+                                <div className="p-10 flex items-center justify-center h-full text-muted-foreground opacity-50 text-sm font-bold uppercase tracking-widest">
+                                    No Tab Selected
+                                </div>
+                            )}
+                        </div>
                     </ResizablePanel>
 
                     <ResizableHandle withHandle className="bg-border/10 w-[1px]" />

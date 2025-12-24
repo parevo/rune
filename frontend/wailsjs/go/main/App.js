@@ -54,6 +54,10 @@ export function GetColumns(arg1, arg2) {
   return window['go']['main']['App']['GetColumns'](arg1, arg2);
 }
 
+export function GetDatabaseSchema(arg1) {
+  return window['go']['main']['App']['GetDatabaseSchema'](arg1);
+}
+
 export function GetDatabases() {
   return window['go']['main']['App']['GetDatabases']();
 }

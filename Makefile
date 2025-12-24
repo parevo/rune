@@ -7,7 +7,7 @@ release:
 	git push origin $(v)
 
 dev:
-	wails dev
+	~/go/bin/wails dev
 
 build:
-	wails build
+	~/go/bin/wails build
