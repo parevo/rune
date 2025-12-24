@@ -63,13 +63,13 @@ jobs:
         run: |
           if [ "${{ matrix.os }}" == "windows-latest" ]; then
             # Move the built binary directly
-            mv build/bin/mergen.exe ${{ matrix.name }}
+            mv build/bin/Mergen.exe ${{ matrix.name }}
           elif [ "${{ matrix.os }}" == "ubuntu-22.04" ]; then
-            mv build/bin/mergen ${{ matrix.name }}
+            mv build/bin/Mergen ${{ matrix.name }}
           else
             # For macOS, zip the .app bundle
             cd build/bin
-            zip -r ../../${{ matrix.name }} mergen.app
+            zip -r ../../${{ matrix.name }} Mergen.app
           fi
 
       - name: Generate Checksum

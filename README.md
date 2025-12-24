@@ -1,6 +1,6 @@
 
 <div align="center">
-  <img src="https://wails.io/img/wails-logo.svg" alt="Mergen Logo" width="120" height="120" />
+  <img src="https://raw.githubusercontent.com/parevo/mergen/refs/heads/main/assets/mergen.png" alt="Mergen Logo" width="120" height="120" />
   <h1>Mergen</h1>
   <p>
     <b>The Aesthetic & High-Performance Database Client</b>
