@@ -17,7 +17,7 @@
 
   <br />
 
-  <img src="https://github.com/parevo/mergen/raw/main/assets/mergen_tutorial.gif" alt="Mergen Tutorial" width="100%" style="border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);" />
+  <video src="https://github.com/parevo/mergen/raw/main/assets/mergen_tutorial.mp4" width="100%" controls autoplay loop muted style="border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);"></video>
 </div>
 
 <br />
