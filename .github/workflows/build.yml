@@ -67,7 +67,7 @@ jobs:
 
       - name: Wails Build
         run: |
-          wails build -platform ${{ matrix.platform }} -clean ${{ matrix.args }} -verbosity 2 -ldflags "-X main.AppVersion=${{ github.ref_name }}"
+          wails build -platform ${{ matrix.platform }} -clean ${{ matrix.args }} -ldflags "-X main.AppVersion=${{ github.ref_name }}"
 
       - name: Rename and Prepare Binary
         shell: bash
